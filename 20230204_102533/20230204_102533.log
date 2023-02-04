@@ -1,0 +1,1147 @@
+2023/02/04 10:25:34 - mmengine - INFO - 
+------------------------------------------------------------
+System environment:
+    sys.platform: linux
+    Python: 3.9.16 (main, Jan 11 2023, 16:05:54) [GCC 11.2.0]
+    CUDA available: True
+    numpy_random_seed: 1524832462
+    GPU 0: NVIDIA GeForce RTX 3080 Ti
+    CUDA_HOME: /usr/local/cuda-11.6
+    NVCC: Cuda compilation tools, release 11.6, V11.6.55
+    GCC: gcc (Ubuntu 9.4.0-1ubuntu1~20.04.1) 9.4.0
+    PyTorch: 1.13.1+cu116
+    PyTorch compiling details: PyTorch built with:
+  - GCC 9.3
+  - C++ Version: 201402
+  - Intel(R) Math Kernel Library Version 2020.0.0 Product Build 20191122 for Intel(R) 64 architecture applications
+  - Intel(R) MKL-DNN v2.6.0 (Git Hash 52b5f107dd9cf10910aaa19cb47f3abf9b349815)
+  - OpenMP 201511 (a.k.a. OpenMP 4.5)
+  - LAPACK is enabled (usually provided by MKL)
+  - NNPACK is enabled
+  - CPU capability usage: AVX2
+  - CUDA Runtime 11.6
+  - NVCC architecture flags: -gencode;arch=compute_37,code=sm_37;-gencode;arch=compute_50,code=sm_50;-gencode;arch=compute_60,code=sm_60;-gencode;arch=compute_70,code=sm_70;-gencode;arch=compute_75,code=sm_75;-gencode;arch=compute_80,code=sm_80;-gencode;arch=compute_86,code=sm_86
+  - CuDNN 8.4.1
+    - Built with CuDNN 8.3.2
+  - Magma 2.6.1
+  - Build settings: BLAS_INFO=mkl, BUILD_TYPE=Release, CUDA_VERSION=11.6, CUDNN_VERSION=8.3.2, CXX_COMPILER=/opt/rh/devtoolset-9/root/usr/bin/c++, CXX_FLAGS= -fabi-version=11 -Wno-deprecated -fvisibility-inlines-hidden -DUSE_PTHREADPOOL -fopenmp -DNDEBUG -DUSE_KINETO -DUSE_FBGEMM -DUSE_QNNPACK -DUSE_PYTORCH_QNNPACK -DUSE_XNNPACK -DSYMBOLICATE_MOBILE_DEBUG_HANDLE -DEDGE_PROFILER_USE_KINETO -O2 -fPIC -Wno-narrowing -Wall -Wextra -Werror=return-type -Werror=non-virtual-dtor -Wno-missing-field-initializers -Wno-type-limits -Wno-array-bounds -Wno-unknown-pragmas -Wunused-local-typedefs -Wno-unused-parameter -Wno-unused-function -Wno-unused-result -Wno-strict-overflow -Wno-strict-aliasing -Wno-error=deprecated-declarations -Wno-stringop-overflow -Wno-psabi -Wno-error=pedantic -Wno-error=redundant-decls -Wno-error=old-style-cast -fdiagnostics-color=always -faligned-new -Wno-unused-but-set-variable -Wno-maybe-uninitialized -fno-math-errno -fno-trapping-math -Werror=format -Werror=cast-function-type -Wno-stringop-overflow, LAPACK_INFO=mkl, PERF_WITH_AVX=1, PERF_WITH_AVX2=1, PERF_WITH_AVX512=1, TORCH_VERSION=1.13.1, USE_CUDA=ON, USE_CUDNN=ON, USE_EXCEPTION_PTR=1, USE_GFLAGS=OFF, USE_GLOG=OFF, USE_MKL=ON, USE_MKLDNN=ON, USE_MPI=OFF, USE_NCCL=ON, USE_NNPACK=ON, USE_OPENMP=ON, USE_ROCM=OFF, 
+
+    TorchVision: 0.14.1+cu116
+    OpenCV: 4.7.0
+    MMEngine: 0.5.0
+
+Runtime environment:
+    cudnn_benchmark: False
+    mp_cfg: {'mp_start_method': 'fork', 'opencv_num_threads': 0}
+    dist_cfg: {'backend': 'nccl'}
+    seed: None
+    deterministic: False
+    Distributed launcher: none
+    Distributed training: False
+    GPU number: 1
+------------------------------------------------------------
+
+2023/02/04 10:25:34 - mmengine - INFO - Config:
+model = dict(
+    type='ImageClassifier',
+    backbone=dict(type='MobileNetV3', arch='large'),
+    neck=dict(type='GlobalAveragePooling'),
+    head=dict(
+        type='StackedLinearClsHead',
+        num_classes=5,
+        in_channels=960,
+        mid_channels=[1280],
+        dropout_rate=0.2,
+        act_cfg=dict(type='HSwish'),
+        loss=dict(type='CrossEntropyLoss', loss_weight=1.0),
+        init_cfg=dict(
+            type='Normal', layer='Linear', mean=0.0, std=0.01, bias=0.0),
+        topk=1))
+dataset_type = 'ImageNet'
+data_preprocessor = dict(
+    num_classes=5,
+    mean=[123.675, 116.28, 103.53],
+    std=[58.395, 57.12, 57.375],
+    to_rgb=True)
+bgr_mean = [103.53, 116.28, 123.675]
+bgr_std = [57.375, 57.12, 58.395]
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='RandomResizedCrop', scale=224, backend='pillow'),
+    dict(type='RandomFlip', prob=0.5, direction='horizontal'),
+    dict(
+        type='AutoAugment',
+        policies='imagenet',
+        hparams=dict(pad_val=[104, 116, 124])),
+    dict(
+        type='RandomErasing',
+        erase_prob=0.2,
+        mode='rand',
+        min_area_ratio=0.02,
+        max_area_ratio=0.3333333333333333,
+        fill_color=[103.53, 116.28, 123.675],
+        fill_std=[57.375, 57.12, 58.395]),
+    dict(type='PackClsInputs')
+]
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='ResizeEdge', scale=256, edge='short', backend='pillow'),
+    dict(type='CenterCrop', crop_size=224),
+    dict(type='PackClsInputs')
+]
+train_dataloader = dict(
+    pin_memory=True,
+    persistent_workers=True,
+    collate_fn=dict(type='default_collate'),
+    batch_size=64,
+    num_workers=5,
+    dataset=dict(
+        type='ImageNet',
+        data_root='data/flower_dataset',
+        ann_file='train.txt',
+        data_prefix='train',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='RandomResizedCrop', scale=224, backend='pillow'),
+            dict(type='RandomFlip', prob=0.5, direction='horizontal'),
+            dict(
+                type='AutoAugment',
+                policies='imagenet',
+                hparams=dict(pad_val=[104, 116, 124])),
+            dict(
+                type='RandomErasing',
+                erase_prob=0.2,
+                mode='rand',
+                min_area_ratio=0.02,
+                max_area_ratio=0.3333333333333333,
+                fill_color=[103.53, 116.28, 123.675],
+                fill_std=[57.375, 57.12, 58.395]),
+            dict(type='PackClsInputs')
+        ]),
+    sampler=dict(type='DefaultSampler', shuffle=True))
+val_dataloader = dict(
+    pin_memory=True,
+    persistent_workers=True,
+    collate_fn=dict(type='default_collate'),
+    batch_size=64,
+    num_workers=5,
+    dataset=dict(
+        type='ImageNet',
+        data_root='data/flower_dataset',
+        ann_file='val.txt',
+        data_prefix='val',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='ResizeEdge', scale=256, edge='short', backend='pillow'),
+            dict(type='CenterCrop', crop_size=224),
+            dict(type='PackClsInputs')
+        ]),
+    sampler=dict(type='DefaultSampler', shuffle=False))
+val_evaluator = dict(type='Accuracy', topk=1)
+test_dataloader = dict(
+    pin_memory=True,
+    persistent_workers=True,
+    collate_fn=dict(type='default_collate'),
+    batch_size=64,
+    num_workers=5,
+    dataset=dict(
+        type='ImageNet',
+        data_root='data/flower_dataset',
+        ann_file='val.txt',
+        data_prefix='val',
+        pipeline=[
+            dict(type='LoadImageFromFile'),
+            dict(type='ResizeEdge', scale=256, edge='short', backend='pillow'),
+            dict(type='CenterCrop', crop_size=224),
+            dict(type='PackClsInputs')
+        ]),
+    sampler=dict(type='DefaultSampler', shuffle=False))
+test_evaluator = dict(type='Accuracy', topk=1)
+default_scope = 'mmcls'
+default_hooks = dict(
+    timer=dict(type='IterTimerHook'),
+    logger=dict(type='LoggerHook', interval=100),
+    param_scheduler=dict(type='ParamSchedulerHook'),
+    checkpoint=dict(type='CheckpointHook', interval=10),
+    sampler_seed=dict(type='DistSamplerSeedHook'),
+    visualization=dict(type='VisualizationHook', enable=False))
+env_cfg = dict(
+    cudnn_benchmark=False,
+    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
+    dist_cfg=dict(backend='nccl'))
+vis_backends = [dict(type='LocalVisBackend')]
+visualizer = dict(
+    type='ClsVisualizer', vis_backends=[dict(type='LocalVisBackend')])
+log_level = 'INFO'
+load_from = None
+resume = False
+randomness = dict(seed=None, deterministic=False)
+optim_wrapper = dict(
+    optimizer=dict(
+        type='RMSprop',
+        lr=0.064,
+        alpha=0.9,
+        momentum=0.9,
+        eps=0.0316,
+        weight_decay=1e-05),
+    type='AmpOptimWrapper',
+    loss_scale='dynamic')
+param_scheduler = dict(type='StepLR', by_epoch=True, step_size=2, gamma=0.973)
+train_cfg = dict(by_epoch=True, max_epochs=600, val_interval=1)
+val_cfg = dict()
+test_cfg = dict()
+auto_scale_lr = dict(base_batch_size=1024, enable=True)
+launcher = 'none'
+work_dir = './work_dirs/mobilenet-v3-large_8xb128_in1k'
+
+2023/02/04 10:25:34 - mmengine - WARNING - The "visualizer" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:34 - mmengine - WARNING - The "vis_backend" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:34 - mmengine - WARNING - The "model" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - INFO - Distributed training is not used, all SyncBatchNorm (SyncBN) layers in the model will be automatically reverted to BatchNormXd layers if they are used.
+2023/02/04 10:25:36 - mmengine - WARNING - The "hook" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - INFO - Hooks will be executed in the following order:
+before_run:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+before_train:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_train_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) DistSamplerSeedHook                
+ -------------------- 
+before_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_train_iter:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+after_train_epoch:
+(NORMAL      ) IterTimerHook                      
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_val_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_val_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_val_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) VisualizationHook                  
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_val_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+(LOW         ) ParamSchedulerHook                 
+(VERY_LOW    ) CheckpointHook                     
+ -------------------- 
+before_test_epoch:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+before_test_iter:
+(NORMAL      ) IterTimerHook                      
+ -------------------- 
+after_test_iter:
+(NORMAL      ) IterTimerHook                      
+(NORMAL      ) VisualizationHook                  
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_test_epoch:
+(VERY_HIGH   ) RuntimeInfoHook                    
+(NORMAL      ) IterTimerHook                      
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+after_run:
+(BELOW_NORMAL) LoggerHook                         
+ -------------------- 
+2023/02/04 10:25:36 - mmengine - WARNING - The "dataset" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "transform" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "data sampler" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "optimizer wrapper constructor" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "optimizer" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "optimizer_wrapper" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - INFO - LR is set based on batch size of 1024 and the current batch size is 64. Scaling the original LR by 0.0625.
+2023/02/04 10:25:36 - mmengine - WARNING - The "parameter scheduler" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "metric" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+2023/02/04 10:25:36 - mmengine - WARNING - The "weight initializer" registry in mmcls did not set import location. Fallback to call `mmcls.utils.register_all_modules` instead.
+Name of parameter - Initialization information
+
+backbone.layer0.conv.weight - torch.Size([16, 3, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer0.bn.weight - torch.Size([16]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer0.bn.bias - torch.Size([16]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.depthwise_conv.conv.weight - torch.Size([16, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer1.depthwise_conv.bn.weight - torch.Size([16]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.depthwise_conv.bn.bias - torch.Size([16]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.linear_conv.conv.weight - torch.Size([16, 16, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer1.linear_conv.bn.weight - torch.Size([16]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer1.linear_conv.bn.bias - torch.Size([16]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.expand_conv.conv.weight - torch.Size([64, 16, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer2.expand_conv.bn.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.expand_conv.bn.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.depthwise_conv.conv.weight - torch.Size([64, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer2.depthwise_conv.bn.weight - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.depthwise_conv.bn.bias - torch.Size([64]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.linear_conv.conv.weight - torch.Size([24, 64, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer2.linear_conv.bn.weight - torch.Size([24]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer2.linear_conv.bn.bias - torch.Size([24]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.expand_conv.conv.weight - torch.Size([72, 24, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer3.expand_conv.bn.weight - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.expand_conv.bn.bias - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.depthwise_conv.conv.weight - torch.Size([72, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer3.depthwise_conv.bn.weight - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.depthwise_conv.bn.bias - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.linear_conv.conv.weight - torch.Size([24, 72, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer3.linear_conv.bn.weight - torch.Size([24]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer3.linear_conv.bn.bias - torch.Size([24]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.expand_conv.conv.weight - torch.Size([72, 24, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer4.expand_conv.bn.weight - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.expand_conv.bn.bias - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.depthwise_conv.conv.weight - torch.Size([72, 1, 5, 5]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer4.depthwise_conv.bn.weight - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.depthwise_conv.bn.bias - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.se.conv1.conv.weight - torch.Size([24, 72, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer4.se.conv1.conv.bias - torch.Size([24]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.se.conv2.conv.weight - torch.Size([72, 24, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer4.se.conv2.conv.bias - torch.Size([72]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.linear_conv.conv.weight - torch.Size([40, 72, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer4.linear_conv.bn.weight - torch.Size([40]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer4.linear_conv.bn.bias - torch.Size([40]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.expand_conv.conv.weight - torch.Size([120, 40, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer5.expand_conv.bn.weight - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.expand_conv.bn.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.depthwise_conv.conv.weight - torch.Size([120, 1, 5, 5]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer5.depthwise_conv.bn.weight - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.depthwise_conv.bn.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.se.conv1.conv.weight - torch.Size([32, 120, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer5.se.conv1.conv.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.se.conv2.conv.weight - torch.Size([120, 32, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer5.se.conv2.conv.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.linear_conv.conv.weight - torch.Size([40, 120, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer5.linear_conv.bn.weight - torch.Size([40]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer5.linear_conv.bn.bias - torch.Size([40]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.expand_conv.conv.weight - torch.Size([120, 40, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer6.expand_conv.bn.weight - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.expand_conv.bn.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.depthwise_conv.conv.weight - torch.Size([120, 1, 5, 5]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer6.depthwise_conv.bn.weight - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.depthwise_conv.bn.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.se.conv1.conv.weight - torch.Size([32, 120, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer6.se.conv1.conv.bias - torch.Size([32]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.se.conv2.conv.weight - torch.Size([120, 32, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer6.se.conv2.conv.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.linear_conv.conv.weight - torch.Size([40, 120, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer6.linear_conv.bn.weight - torch.Size([40]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer6.linear_conv.bn.bias - torch.Size([40]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer7.expand_conv.conv.weight - torch.Size([240, 40, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer7.expand_conv.bn.weight - torch.Size([240]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer7.expand_conv.bn.bias - torch.Size([240]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer7.depthwise_conv.conv.weight - torch.Size([240, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer7.depthwise_conv.bn.weight - torch.Size([240]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer7.depthwise_conv.bn.bias - torch.Size([240]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer7.linear_conv.conv.weight - torch.Size([80, 240, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer7.linear_conv.bn.weight - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer7.linear_conv.bn.bias - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer8.expand_conv.conv.weight - torch.Size([200, 80, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer8.expand_conv.bn.weight - torch.Size([200]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer8.expand_conv.bn.bias - torch.Size([200]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer8.depthwise_conv.conv.weight - torch.Size([200, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer8.depthwise_conv.bn.weight - torch.Size([200]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer8.depthwise_conv.bn.bias - torch.Size([200]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer8.linear_conv.conv.weight - torch.Size([80, 200, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer8.linear_conv.bn.weight - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer8.linear_conv.bn.bias - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer9.expand_conv.conv.weight - torch.Size([184, 80, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer9.expand_conv.bn.weight - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer9.expand_conv.bn.bias - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer9.depthwise_conv.conv.weight - torch.Size([184, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer9.depthwise_conv.bn.weight - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer9.depthwise_conv.bn.bias - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer9.linear_conv.conv.weight - torch.Size([80, 184, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer9.linear_conv.bn.weight - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer9.linear_conv.bn.bias - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer10.expand_conv.conv.weight - torch.Size([184, 80, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer10.expand_conv.bn.weight - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer10.expand_conv.bn.bias - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer10.depthwise_conv.conv.weight - torch.Size([184, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer10.depthwise_conv.bn.weight - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer10.depthwise_conv.bn.bias - torch.Size([184]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer10.linear_conv.conv.weight - torch.Size([80, 184, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer10.linear_conv.bn.weight - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer10.linear_conv.bn.bias - torch.Size([80]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.expand_conv.conv.weight - torch.Size([480, 80, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer11.expand_conv.bn.weight - torch.Size([480]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.expand_conv.bn.bias - torch.Size([480]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.depthwise_conv.conv.weight - torch.Size([480, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer11.depthwise_conv.bn.weight - torch.Size([480]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.depthwise_conv.bn.bias - torch.Size([480]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.se.conv1.conv.weight - torch.Size([120, 480, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer11.se.conv1.conv.bias - torch.Size([120]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.se.conv2.conv.weight - torch.Size([480, 120, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer11.se.conv2.conv.bias - torch.Size([480]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.linear_conv.conv.weight - torch.Size([112, 480, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer11.linear_conv.bn.weight - torch.Size([112]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer11.linear_conv.bn.bias - torch.Size([112]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.expand_conv.conv.weight - torch.Size([672, 112, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer12.expand_conv.bn.weight - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.expand_conv.bn.bias - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.depthwise_conv.conv.weight - torch.Size([672, 1, 3, 3]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer12.depthwise_conv.bn.weight - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.depthwise_conv.bn.bias - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.se.conv1.conv.weight - torch.Size([168, 672, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer12.se.conv1.conv.bias - torch.Size([168]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.se.conv2.conv.weight - torch.Size([672, 168, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer12.se.conv2.conv.bias - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.linear_conv.conv.weight - torch.Size([112, 672, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer12.linear_conv.bn.weight - torch.Size([112]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer12.linear_conv.bn.bias - torch.Size([112]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.expand_conv.conv.weight - torch.Size([672, 112, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer13.expand_conv.bn.weight - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.expand_conv.bn.bias - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.depthwise_conv.conv.weight - torch.Size([672, 1, 5, 5]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer13.depthwise_conv.bn.weight - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.depthwise_conv.bn.bias - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.se.conv1.conv.weight - torch.Size([168, 672, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer13.se.conv1.conv.bias - torch.Size([168]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.se.conv2.conv.weight - torch.Size([672, 168, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer13.se.conv2.conv.bias - torch.Size([672]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.linear_conv.conv.weight - torch.Size([160, 672, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer13.linear_conv.bn.weight - torch.Size([160]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer13.linear_conv.bn.bias - torch.Size([160]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.expand_conv.conv.weight - torch.Size([960, 160, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer14.expand_conv.bn.weight - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.expand_conv.bn.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.depthwise_conv.conv.weight - torch.Size([960, 1, 5, 5]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer14.depthwise_conv.bn.weight - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.depthwise_conv.bn.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.se.conv1.conv.weight - torch.Size([240, 960, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer14.se.conv1.conv.bias - torch.Size([240]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.se.conv2.conv.weight - torch.Size([960, 240, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer14.se.conv2.conv.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.linear_conv.conv.weight - torch.Size([160, 960, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer14.linear_conv.bn.weight - torch.Size([160]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer14.linear_conv.bn.bias - torch.Size([160]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.expand_conv.conv.weight - torch.Size([960, 160, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer15.expand_conv.bn.weight - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.expand_conv.bn.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.depthwise_conv.conv.weight - torch.Size([960, 1, 5, 5]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer15.depthwise_conv.bn.weight - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.depthwise_conv.bn.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.se.conv1.conv.weight - torch.Size([240, 960, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer15.se.conv1.conv.bias - torch.Size([240]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.se.conv2.conv.weight - torch.Size([960, 240, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer15.se.conv2.conv.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.linear_conv.conv.weight - torch.Size([160, 960, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer15.linear_conv.bn.weight - torch.Size([160]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer15.linear_conv.bn.bias - torch.Size([160]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer16.conv.weight - torch.Size([960, 160, 1, 1]): 
+Initialized by user-defined `init_weights` in ConvModule  
+
+backbone.layer16.bn.weight - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+backbone.layer16.bn.bias - torch.Size([960]): 
+The value is the same before and after calling `init_weights` of ImageClassifier  
+
+head.layers.0.fc.weight - torch.Size([1280, 960]): 
+NormalInit: mean=0.0, std=0.01, bias=0.0 
+
+head.layers.0.fc.bias - torch.Size([1280]): 
+NormalInit: mean=0.0, std=0.01, bias=0.0 
+
+head.layers.1.fc.weight - torch.Size([5, 1280]): 
+NormalInit: mean=0.0, std=0.01, bias=0.0 
+
+head.layers.1.fc.bias - torch.Size([5]): 
+NormalInit: mean=0.0, std=0.01, bias=0.0 
+2023/02/04 10:25:36 - mmengine - INFO - Checkpoints will be saved to /home/omnisky/Downloads/mmclassification-1.0.0rc5/work_dirs/mobilenet-v3-large_8xb128_in1k.
+2023/02/04 10:25:43 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:25:43 - mmengine - INFO - Epoch(val) [1][5/5]  accuracy/top1: 20.5674
+2023/02/04 10:25:47 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:25:47 - mmengine - INFO - Epoch(val) [2][5/5]  accuracy/top1: 28.7234
+2023/02/04 10:25:51 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:25:51 - mmengine - INFO - Epoch(val) [3][5/5]  accuracy/top1: 20.2128
+2023/02/04 10:25:55 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:25:55 - mmengine - INFO - Epoch(val) [4][5/5]  accuracy/top1: 37.5887
+2023/02/04 10:25:59 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:25:59 - mmengine - INFO - Epoch(val) [5][5/5]  accuracy/top1: 19.8582
+2023/02/04 10:26:03 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:03 - mmengine - INFO - Epoch(val) [6][5/5]  accuracy/top1: 30.8511
+2023/02/04 10:26:07 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:07 - mmengine - INFO - Epoch(val) [7][5/5]  accuracy/top1: 24.8227
+2023/02/04 10:26:11 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:11 - mmengine - INFO - Epoch(val) [8][5/5]  accuracy/top1: 40.4255
+2023/02/04 10:26:15 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:15 - mmengine - INFO - Epoch(val) [9][5/5]  accuracy/top1: 59.9291
+2023/02/04 10:26:19 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:19 - mmengine - INFO - Saving checkpoint at 10 epochs
+2023/02/04 10:26:20 - mmengine - INFO - Epoch(val) [10][5/5]  accuracy/top1: 58.5106
+2023/02/04 10:26:23 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:24 - mmengine - INFO - Epoch(val) [11][5/5]  accuracy/top1: 44.3262
+2023/02/04 10:26:27 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:28 - mmengine - INFO - Epoch(val) [12][5/5]  accuracy/top1: 39.7163
+2023/02/04 10:26:31 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:32 - mmengine - INFO - Epoch(val) [13][5/5]  accuracy/top1: 54.6099
+2023/02/04 10:26:35 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:36 - mmengine - INFO - Epoch(val) [14][5/5]  accuracy/top1: 52.4823
+2023/02/04 10:26:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:40 - mmengine - INFO - Epoch(val) [15][5/5]  accuracy/top1: 38.6525
+2023/02/04 10:26:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:44 - mmengine - INFO - Epoch(val) [16][5/5]  accuracy/top1: 58.1560
+2023/02/04 10:26:49 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:49 - mmengine - INFO - Epoch(val) [17][5/5]  accuracy/top1: 60.2837
+2023/02/04 10:26:53 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:54 - mmengine - INFO - Epoch(val) [18][5/5]  accuracy/top1: 30.4965
+2023/02/04 10:26:58 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:26:58 - mmengine - INFO - Epoch(val) [19][5/5]  accuracy/top1: 66.6667
+2023/02/04 10:27:03 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:03 - mmengine - INFO - Saving checkpoint at 20 epochs
+2023/02/04 10:27:04 - mmengine - INFO - Epoch(val) [20][5/5]  accuracy/top1: 63.1206
+2023/02/04 10:27:08 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:08 - mmengine - INFO - Epoch(val) [21][5/5]  accuracy/top1: 65.2482
+2023/02/04 10:27:13 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:13 - mmengine - INFO - Epoch(val) [22][5/5]  accuracy/top1: 57.0922
+2023/02/04 10:27:18 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:18 - mmengine - INFO - Epoch(val) [23][5/5]  accuracy/top1: 61.3475
+2023/02/04 10:27:22 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:22 - mmengine - INFO - Epoch(val) [24][5/5]  accuracy/top1: 52.4823
+2023/02/04 10:27:24 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:26 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:27 - mmengine - INFO - Epoch(val) [25][5/5]  accuracy/top1: 41.4894
+2023/02/04 10:27:31 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:31 - mmengine - INFO - Epoch(val) [26][5/5]  accuracy/top1: 66.6667
+2023/02/04 10:27:35 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:35 - mmengine - INFO - Epoch(val) [27][5/5]  accuracy/top1: 65.9575
+2023/02/04 10:27:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:40 - mmengine - INFO - Epoch(val) [28][5/5]  accuracy/top1: 49.6454
+2023/02/04 10:27:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:44 - mmengine - INFO - Epoch(val) [29][5/5]  accuracy/top1: 52.1277
+2023/02/04 10:27:48 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:48 - mmengine - INFO - Saving checkpoint at 30 epochs
+2023/02/04 10:27:49 - mmengine - INFO - Epoch(val) [30][5/5]  accuracy/top1: 17.3759
+2023/02/04 10:27:52 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:53 - mmengine - INFO - Epoch(val) [31][5/5]  accuracy/top1: 27.6596
+2023/02/04 10:27:57 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:27:57 - mmengine - INFO - Epoch(val) [32][5/5]  accuracy/top1: 49.2908
+2023/02/04 10:28:00 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:01 - mmengine - INFO - Epoch(val) [33][5/5]  accuracy/top1: 55.6738
+2023/02/04 10:28:04 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:05 - mmengine - INFO - Epoch(val) [34][5/5]  accuracy/top1: 70.2128
+2023/02/04 10:28:08 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:09 - mmengine - INFO - Epoch(val) [35][5/5]  accuracy/top1: 74.4681
+2023/02/04 10:28:12 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:12 - mmengine - INFO - Epoch(val) [36][5/5]  accuracy/top1: 47.5177
+2023/02/04 10:28:16 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:16 - mmengine - INFO - Epoch(val) [37][5/5]  accuracy/top1: 56.3830
+2023/02/04 10:28:20 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:21 - mmengine - INFO - Epoch(val) [38][5/5]  accuracy/top1: 65.9575
+2023/02/04 10:28:24 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:24 - mmengine - INFO - Epoch(val) [39][5/5]  accuracy/top1: 78.3688
+2023/02/04 10:28:28 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:28 - mmengine - INFO - Saving checkpoint at 40 epochs
+2023/02/04 10:28:28 - mmengine - INFO - Epoch(val) [40][5/5]  accuracy/top1: 75.8865
+2023/02/04 10:28:32 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:33 - mmengine - INFO - Epoch(val) [41][5/5]  accuracy/top1: 72.3404
+2023/02/04 10:28:36 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:37 - mmengine - INFO - Epoch(val) [42][5/5]  accuracy/top1: 64.1844
+2023/02/04 10:28:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:41 - mmengine - INFO - Epoch(val) [43][5/5]  accuracy/top1: 76.2411
+2023/02/04 10:28:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:44 - mmengine - INFO - Epoch(val) [44][5/5]  accuracy/top1: 75.1773
+2023/02/04 10:28:48 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:48 - mmengine - INFO - Epoch(val) [45][5/5]  accuracy/top1: 63.1206
+2023/02/04 10:28:52 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:53 - mmengine - INFO - Epoch(val) [46][5/5]  accuracy/top1: 69.1489
+2023/02/04 10:28:56 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:28:57 - mmengine - INFO - Epoch(val) [47][5/5]  accuracy/top1: 69.5035
+2023/02/04 10:29:00 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:00 - mmengine - INFO - Epoch(val) [48][5/5]  accuracy/top1: 70.2128
+2023/02/04 10:29:03 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:04 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:04 - mmengine - INFO - Epoch(val) [49][5/5]  accuracy/top1: 73.4043
+2023/02/04 10:29:08 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:08 - mmengine - INFO - Saving checkpoint at 50 epochs
+2023/02/04 10:29:09 - mmengine - INFO - Epoch(val) [50][5/5]  accuracy/top1: 64.5390
+2023/02/04 10:29:13 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:13 - mmengine - INFO - Epoch(val) [51][5/5]  accuracy/top1: 75.5319
+2023/02/04 10:29:17 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:18 - mmengine - INFO - Epoch(val) [52][5/5]  accuracy/top1: 77.6596
+2023/02/04 10:29:21 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:22 - mmengine - INFO - Epoch(val) [53][5/5]  accuracy/top1: 80.1418
+2023/02/04 10:29:26 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:26 - mmengine - INFO - Epoch(val) [54][5/5]  accuracy/top1: 74.1135
+2023/02/04 10:29:31 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:31 - mmengine - INFO - Epoch(val) [55][5/5]  accuracy/top1: 68.4397
+2023/02/04 10:29:35 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:36 - mmengine - INFO - Epoch(val) [56][5/5]  accuracy/top1: 69.8582
+2023/02/04 10:29:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:40 - mmengine - INFO - Epoch(val) [57][5/5]  accuracy/top1: 77.6596
+2023/02/04 10:29:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:45 - mmengine - INFO - Epoch(val) [58][5/5]  accuracy/top1: 74.4681
+2023/02/04 10:29:49 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:50 - mmengine - INFO - Epoch(val) [59][5/5]  accuracy/top1: 72.6950
+2023/02/04 10:29:54 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:54 - mmengine - INFO - Saving checkpoint at 60 epochs
+2023/02/04 10:29:55 - mmengine - INFO - Epoch(val) [60][5/5]  accuracy/top1: 79.7872
+2023/02/04 10:29:59 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:29:59 - mmengine - INFO - Epoch(val) [61][5/5]  accuracy/top1: 77.3050
+2023/02/04 10:30:03 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:03 - mmengine - INFO - Epoch(val) [62][5/5]  accuracy/top1: 77.3050
+2023/02/04 10:30:07 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:08 - mmengine - INFO - Epoch(val) [63][5/5]  accuracy/top1: 80.8511
+2023/02/04 10:30:12 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:12 - mmengine - INFO - Epoch(val) [64][5/5]  accuracy/top1: 71.9858
+2023/02/04 10:30:16 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:16 - mmengine - INFO - Epoch(val) [65][5/5]  accuracy/top1: 75.8865
+2023/02/04 10:30:20 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:20 - mmengine - INFO - Epoch(val) [66][5/5]  accuracy/top1: 74.4681
+2023/02/04 10:30:24 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:24 - mmengine - INFO - Epoch(val) [67][5/5]  accuracy/top1: 76.5957
+2023/02/04 10:30:28 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:28 - mmengine - INFO - Epoch(val) [68][5/5]  accuracy/top1: 84.3972
+2023/02/04 10:30:31 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:32 - mmengine - INFO - Epoch(val) [69][5/5]  accuracy/top1: 84.3972
+2023/02/04 10:30:35 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:35 - mmengine - INFO - Saving checkpoint at 70 epochs
+2023/02/04 10:30:36 - mmengine - INFO - Epoch(val) [70][5/5]  accuracy/top1: 83.6879
+2023/02/04 10:30:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:40 - mmengine - INFO - Epoch(val) [71][5/5]  accuracy/top1: 84.7518
+2023/02/04 10:30:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:44 - mmengine - INFO - Epoch(val) [72][5/5]  accuracy/top1: 79.0780
+2023/02/04 10:30:48 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:48 - mmengine - INFO - Epoch(val) [73][5/5]  accuracy/top1: 88.2979
+2023/02/04 10:30:49 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:52 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:52 - mmengine - INFO - Epoch(val) [74][5/5]  accuracy/top1: 84.3972
+2023/02/04 10:30:55 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:30:56 - mmengine - INFO - Epoch(val) [75][5/5]  accuracy/top1: 86.8794
+2023/02/04 10:30:59 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:00 - mmengine - INFO - Epoch(val) [76][5/5]  accuracy/top1: 88.6525
+2023/02/04 10:31:03 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:04 - mmengine - INFO - Epoch(val) [77][5/5]  accuracy/top1: 86.8794
+2023/02/04 10:31:08 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:09 - mmengine - INFO - Epoch(val) [78][5/5]  accuracy/top1: 88.2979
+2023/02/04 10:31:12 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:13 - mmengine - INFO - Epoch(val) [79][5/5]  accuracy/top1: 86.1702
+2023/02/04 10:31:16 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:16 - mmengine - INFO - Saving checkpoint at 80 epochs
+2023/02/04 10:31:17 - mmengine - INFO - Epoch(val) [80][5/5]  accuracy/top1: 87.2340
+2023/02/04 10:31:21 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:22 - mmengine - INFO - Epoch(val) [81][5/5]  accuracy/top1: 80.8511
+2023/02/04 10:31:26 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:26 - mmengine - INFO - Epoch(val) [82][5/5]  accuracy/top1: 85.1064
+2023/02/04 10:31:30 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:31 - mmengine - INFO - Epoch(val) [83][5/5]  accuracy/top1: 77.6596
+2023/02/04 10:31:35 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:36 - mmengine - INFO - Epoch(val) [84][5/5]  accuracy/top1: 82.6241
+2023/02/04 10:31:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:40 - mmengine - INFO - Epoch(val) [85][5/5]  accuracy/top1: 79.0780
+2023/02/04 10:31:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:44 - mmengine - INFO - Epoch(val) [86][5/5]  accuracy/top1: 87.5887
+2023/02/04 10:31:48 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:49 - mmengine - INFO - Epoch(val) [87][5/5]  accuracy/top1: 87.2340
+2023/02/04 10:31:52 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:52 - mmengine - INFO - Epoch(val) [88][5/5]  accuracy/top1: 82.9787
+2023/02/04 10:31:56 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:31:56 - mmengine - INFO - Epoch(val) [89][5/5]  accuracy/top1: 80.1418
+2023/02/04 10:32:01 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:01 - mmengine - INFO - Saving checkpoint at 90 epochs
+2023/02/04 10:32:01 - mmengine - INFO - Epoch(val) [90][5/5]  accuracy/top1: 84.0426
+2023/02/04 10:32:06 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:06 - mmengine - INFO - Epoch(val) [91][5/5]  accuracy/top1: 81.9149
+2023/02/04 10:32:11 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:11 - mmengine - INFO - Epoch(val) [92][5/5]  accuracy/top1: 83.3333
+2023/02/04 10:32:16 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:16 - mmengine - INFO - Epoch(val) [93][5/5]  accuracy/top1: 79.7872
+2023/02/04 10:32:20 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:20 - mmengine - INFO - Epoch(val) [94][5/5]  accuracy/top1: 87.2340
+2023/02/04 10:32:24 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:24 - mmengine - INFO - Epoch(val) [95][5/5]  accuracy/top1: 84.3972
+2023/02/04 10:32:28 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:28 - mmengine - INFO - Epoch(val) [96][5/5]  accuracy/top1: 83.3333
+2023/02/04 10:32:32 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:32 - mmengine - INFO - Epoch(val) [97][5/5]  accuracy/top1: 85.8156
+2023/02/04 10:32:34 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:36 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:36 - mmengine - INFO - Epoch(val) [98][5/5]  accuracy/top1: 83.6879
+2023/02/04 10:32:40 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:40 - mmengine - INFO - Epoch(val) [99][5/5]  accuracy/top1: 84.7518
+2023/02/04 10:32:44 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:44 - mmengine - INFO - Saving checkpoint at 100 epochs
+2023/02/04 10:32:45 - mmengine - INFO - Epoch(val) [100][5/5]  accuracy/top1: 87.5887
+2023/02/04 10:32:49 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:49 - mmengine - INFO - Epoch(val) [101][5/5]  accuracy/top1: 84.3972
+2023/02/04 10:32:53 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:53 - mmengine - INFO - Epoch(val) [102][5/5]  accuracy/top1: 85.1064
+2023/02/04 10:32:57 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:32:58 - mmengine - INFO - Epoch(val) [103][5/5]  accuracy/top1: 84.3972
+2023/02/04 10:33:01 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:02 - mmengine - INFO - Epoch(val) [104][5/5]  accuracy/top1: 87.5887
+2023/02/04 10:33:06 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:06 - mmengine - INFO - Epoch(val) [105][5/5]  accuracy/top1: 88.2979
+2023/02/04 10:33:10 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:11 - mmengine - INFO - Epoch(val) [106][5/5]  accuracy/top1: 85.8156
+2023/02/04 10:33:14 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:14 - mmengine - INFO - Epoch(val) [107][5/5]  accuracy/top1: 87.2340
+2023/02/04 10:33:18 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:18 - mmengine - INFO - Epoch(val) [108][5/5]  accuracy/top1: 87.2340
+2023/02/04 10:33:22 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:22 - mmengine - INFO - Epoch(val) [109][5/5]  accuracy/top1: 86.5248
+2023/02/04 10:33:26 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:26 - mmengine - INFO - Saving checkpoint at 110 epochs
+2023/02/04 10:33:27 - mmengine - INFO - Epoch(val) [110][5/5]  accuracy/top1: 89.3617
+2023/02/04 10:33:30 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:31 - mmengine - INFO - Epoch(val) [111][5/5]  accuracy/top1: 86.8794
+2023/02/04 10:33:34 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:35 - mmengine - INFO - Epoch(val) [112][5/5]  accuracy/top1: 86.8794
+2023/02/04 10:33:38 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:38 - mmengine - INFO - Epoch(val) [113][5/5]  accuracy/top1: 86.8794
+2023/02/04 10:33:42 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:42 - mmengine - INFO - Epoch(val) [114][5/5]  accuracy/top1: 88.6525
+2023/02/04 10:33:46 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:46 - mmengine - INFO - Epoch(val) [115][5/5]  accuracy/top1: 85.1064
+2023/02/04 10:33:50 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:50 - mmengine - INFO - Epoch(val) [116][5/5]  accuracy/top1: 88.2979
+2023/02/04 10:33:54 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:54 - mmengine - INFO - Epoch(val) [117][5/5]  accuracy/top1: 90.4255
+2023/02/04 10:33:58 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:33:58 - mmengine - INFO - Epoch(val) [118][5/5]  accuracy/top1: 90.4255
+2023/02/04 10:34:02 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:02 - mmengine - INFO - Epoch(val) [119][5/5]  accuracy/top1: 85.4610
+2023/02/04 10:34:06 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:06 - mmengine - INFO - Saving checkpoint at 120 epochs
+2023/02/04 10:34:06 - mmengine - INFO - Epoch(val) [120][5/5]  accuracy/top1: 89.0071
+2023/02/04 10:34:11 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:11 - mmengine - INFO - Epoch(val) [121][5/5]  accuracy/top1: 89.3617
+2023/02/04 10:34:15 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:15 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:16 - mmengine - INFO - Epoch(val) [122][5/5]  accuracy/top1: 88.6525
+2023/02/04 10:34:20 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:21 - mmengine - INFO - Epoch(val) [123][5/5]  accuracy/top1: 88.2979
+2023/02/04 10:34:24 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:25 - mmengine - INFO - Epoch(val) [124][5/5]  accuracy/top1: 87.9433
+2023/02/04 10:34:29 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:29 - mmengine - INFO - Epoch(val) [125][5/5]  accuracy/top1: 90.0709
+2023/02/04 10:34:33 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:34 - mmengine - INFO - Epoch(val) [126][5/5]  accuracy/top1: 90.0709
+2023/02/04 10:34:37 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:38 - mmengine - INFO - Epoch(val) [127][5/5]  accuracy/top1: 89.0071
+2023/02/04 10:34:41 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:42 - mmengine - INFO - Epoch(val) [128][5/5]  accuracy/top1: 89.7163
+2023/02/04 10:34:45 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:46 - mmengine - INFO - Epoch(val) [129][5/5]  accuracy/top1: 90.7801
+2023/02/04 10:34:49 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:49 - mmengine - INFO - Saving checkpoint at 130 epochs
+2023/02/04 10:34:50 - mmengine - INFO - Epoch(val) [130][5/5]  accuracy/top1: 91.4894
+2023/02/04 10:34:55 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:34:55 - mmengine - INFO - Epoch(val) [131][5/5]  accuracy/top1: 88.6525
+2023/02/04 10:34:59 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:00 - mmengine - INFO - Epoch(val) [132][5/5]  accuracy/top1: 89.0071
+2023/02/04 10:35:04 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:04 - mmengine - INFO - Epoch(val) [133][5/5]  accuracy/top1: 87.9433
+2023/02/04 10:35:08 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:09 - mmengine - INFO - Epoch(val) [134][5/5]  accuracy/top1: 91.4894
+2023/02/04 10:35:13 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:13 - mmengine - INFO - Epoch(val) [135][5/5]  accuracy/top1: 92.9078
+2023/02/04 10:35:18 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:18 - mmengine - INFO - Epoch(val) [136][5/5]  accuracy/top1: 89.0071
+2023/02/04 10:35:22 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:23 - mmengine - INFO - Epoch(val) [137][5/5]  accuracy/top1: 91.8440
+2023/02/04 10:35:27 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:28 - mmengine - INFO - Epoch(val) [138][5/5]  accuracy/top1: 90.4255
+2023/02/04 10:35:32 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:32 - mmengine - INFO - Epoch(val) [139][5/5]  accuracy/top1: 90.7801
+2023/02/04 10:35:36 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:36 - mmengine - INFO - Saving checkpoint at 140 epochs
+2023/02/04 10:35:37 - mmengine - INFO - Epoch(val) [140][5/5]  accuracy/top1: 92.1986
+2023/02/04 10:35:41 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:41 - mmengine - INFO - Epoch(val) [141][5/5]  accuracy/top1: 88.2979
+2023/02/04 10:35:46 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:46 - mmengine - INFO - Epoch(val) [142][5/5]  accuracy/top1: 87.9433
+2023/02/04 10:35:51 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:51 - mmengine - INFO - Epoch(val) [143][5/5]  accuracy/top1: 87.9433
+2023/02/04 10:35:55 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:55 - mmengine - INFO - Epoch(val) [144][5/5]  accuracy/top1: 89.0071
+2023/02/04 10:35:59 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:35:59 - mmengine - INFO - Epoch(val) [145][5/5]  accuracy/top1: 90.0709
+2023/02/04 10:36:03 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:03 - mmengine - INFO - Epoch(val) [146][5/5]  accuracy/top1: 92.9078
+2023/02/04 10:36:05 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:07 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:08 - mmengine - INFO - Epoch(val) [147][5/5]  accuracy/top1: 91.1348
+2023/02/04 10:36:11 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:12 - mmengine - INFO - Epoch(val) [148][5/5]  accuracy/top1: 90.4255
+2023/02/04 10:36:15 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:16 - mmengine - INFO - Epoch(val) [149][5/5]  accuracy/top1: 90.7801
+2023/02/04 10:36:19 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:19 - mmengine - INFO - Saving checkpoint at 150 epochs
+2023/02/04 10:36:20 - mmengine - INFO - Epoch(val) [150][5/5]  accuracy/top1: 91.4894
+2023/02/04 10:36:24 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:24 - mmengine - INFO - Epoch(val) [151][5/5]  accuracy/top1: 89.7163
+2023/02/04 10:36:29 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:29 - mmengine - INFO - Epoch(val) [152][5/5]  accuracy/top1: 91.1348
+2023/02/04 10:36:33 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:33 - mmengine - INFO - Epoch(val) [153][5/5]  accuracy/top1: 89.3617
+2023/02/04 10:36:37 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:37 - mmengine - INFO - Epoch(val) [154][5/5]  accuracy/top1: 89.0071
+2023/02/04 10:36:41 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:41 - mmengine - INFO - Epoch(val) [155][5/5]  accuracy/top1: 89.7163
+2023/02/04 10:36:45 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:45 - mmengine - INFO - Epoch(val) [156][5/5]  accuracy/top1: 90.0709
+2023/02/04 10:36:49 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:49 - mmengine - INFO - Epoch(val) [157][5/5]  accuracy/top1: 89.7163
+2023/02/04 10:36:53 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:53 - mmengine - INFO - Epoch(val) [158][5/5]  accuracy/top1: 89.7163
+2023/02/04 10:36:57 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:36:58 - mmengine - INFO - Epoch(val) [159][5/5]  accuracy/top1: 88.6525
+2023/02/04 10:37:01 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:37:01 - mmengine - INFO - Saving checkpoint at 160 epochs
+2023/02/04 10:37:02 - mmengine - INFO - Epoch(val) [160][5/5]  accuracy/top1: 90.7801
+2023/02/04 10:37:06 - mmengine - INFO - Exp name: mobilenet-v3-large_8xb128_in1k_20230204_102533
+2023/02/04 10:37:06 - mmengine - INFO - Epoch(val) [161][5/5]  accuracy/top1: 91.8440
